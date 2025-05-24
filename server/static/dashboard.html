@@ -181,7 +181,7 @@ async function loadPlans() {
           <span class="font-semibold">${plan.name}</span>
           <div class="space-x-2">
             <button data-id="${plan.id}" class="btn-toggle px-3 py-1 bg-gray-700 rounded-lg text-sm">Позы</button>
-            <button data-poses="${qs}" class="btn-start px-3 py-1 bg-blue-500 rounded-lg text-sm">Начать</button>
+            <button data-poses="${qs}" data-plan="${plan.id}" class="btn-start px-3 py-1 bg-blue-500 rounded-lg text-sm">Начать</button>
             <button data-id="${plan.id}" class="btn-edit px-3 py-1 bg-yellow-400 rounded-lg text-sm">Изменить</button>
             <button data-id="${plan.id}" class="btn-delete px-3 py-1 bg-red-500 rounded-lg text-sm">Удалить</button>
           </div>
@@ -196,8 +196,14 @@ async function loadPlans() {
   );
 
   document.querySelectorAll('.btn-start').forEach(btn =>
-    btn.onclick = () =>
-      location.href = `training.html?poses=${btn.getAttribute('data-poses')}`
+    btn.onclick = () => {
+    const poses = btn.dataset.poses;
+    const planId = btn.dataset.plan;      // строкой
+    const url = planId
+      ? `training.html?poses=${poses}&plan=${planId}`
+      : `training.html?poses=${poses}`;
+    location.href = url;
+  }
   );
 
   document.querySelectorAll('.btn-edit').forEach(btn =>

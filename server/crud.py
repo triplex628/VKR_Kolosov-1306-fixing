@@ -243,34 +243,39 @@ from .models import WorkoutSession, SessionPoseScore
 from .schemas import WorkoutSessionCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 
-async def create_workout_session(
-    db: AsyncSession,
-    sess_in: schemas.WorkoutSessionCreate,
-    user_id: int
-) -> models.WorkoutSession:
-    # 1) Собираем модель
+async def create_workout_session(db: AsyncSession,
+                                 data: schemas.WorkoutSessionCreate,
+                                 user_id: int) -> models.WorkoutSession:
     sess = models.WorkoutSession(
         user_id     = user_id,
-        workout_id  = sess_in.workout_id,
-        started_at  = datetime.utcnow(),
-        total_time  = sess_in.total_time,
-        avg_score   = sum(p.score for p in sess_in.pose_scores) / len(sess_in.pose_scores) if sess_in.pose_scores else 0.0
+        workout_id  = data.workout_id,
+        total_time  = data.total_time
     )
     db.add(sess)
-    await db.flush()  # чтобы получить sess.id
+    await db.flush()                 # нужен id
 
-    # 2) Добавляем оценки
-    for p in sess_in.pose_scores:
+    # добавляем оценки
+    for item in data.scores:
         db.add(models.SessionPoseScore(
             session_id = sess.id,
-            pose_id    = p.pose_id,
-            score      = p.score
+            pose_id    = item.pose_id,
+            score      = item.score
         ))
 
-    # 3) Сохраняем
+    # пересчитаем средний балл
+    sess.avg_score = (
+        sum(i.score for i in data.scores) / len(data.scores)
+        if data.scores else 0
+    )
     await db.commit()
-    await db.refresh(sess)
-    return sess
+
+    # ⬇ догружаем связь «scores» ОДНИМ запросом
+    result = await db.execute(
+        select(models.WorkoutSession)
+        .options(selectinload(models.WorkoutSession.scores))
+        .where(models.WorkoutSession.id == sess.id)
+    )
+    return result.scalar_one()
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select

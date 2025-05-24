@@ -1,156 +1,112 @@
-<!-- training.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Фитнес-тренировка</title>
-  <link href="https://cdn.tailwindcss.com" rel="stylesheet"/>
-  <style>
-    body{margin:0;font-family:Inter,sans-serif;
-         background:url('/images/fitness-bg.jpg') center/cover no-repeat fixed;
-         color:#f9fafb}
-    .overlay{background:rgba(17,17,17,.8);min-height:100vh;padding:2rem;
-             backdrop-filter:blur(10px);display:flex;flex-direction:column;
-             align-items:center}
-    .card{background:rgba(255,255,255,.05);border-radius:1rem;padding:1.5rem;
-          max-width:800px;width:100%;margin-bottom:2rem;
-          box-shadow:0 10px 30px rgba(0,0,0,.3);text-align:center;display:none}
-    .card.active{display:block}
-    .video-wrapper{position:relative;width:640px;height:360px;margin:0 auto;
-                   border-radius:12px;overflow:hidden}
-    #video,#canvas{position:absolute;top:0;left:0;width:640px;height:360px;
-                   object-fit:cover}
-    #instr-video{width:640px;height:360px;border-radius:12px;object-fit:cover;
-                 margin:0 auto}
-    #ref-img{width:320px;height:180px;margin:1rem auto 0;object-fit:contain;
-             background:#000;border-radius:8px}
-    .btn{padding:.75rem 1.25rem;border:none;border-radius:999px;
-         font-weight:600;cursor:pointer;transition:background-color .2s}
-    .btn-start{background:#22c55e;color:#000}.btn-start:hover{background:#16a34a}
-    .btn-skip{background:#fbbf24;color:#000}.btn-skip:hover{background:#f59e0b}
-    #timer,#score{font-size:1.25rem;margin-top:1rem}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Фитнес-тренировка</title>
+<link href="https://cdn.tailwindcss.com" rel="stylesheet"/>
+<style>
+ body{margin:0;font-family:Inter,sans-serif;background:url('/images/fitness-bg.jpg') center/cover no-repeat fixed;color:#f9fafb}
+ .overlay{background:rgba(17,17,17,.8);min-height:100vh;padding:2rem;backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center}
+ .card{background:rgba(255,255,255,.05);border-radius:1rem;padding:1.5rem;max-width:800px;width:100%;margin-bottom:2rem;
+       box-shadow:0 10px 30px rgba(0,0,0,.3);text-align:center;display:none}
+ .card.active{display:block}
+ .video-wrapper{position:relative;width:640px;height:360px;margin:0 auto;border-radius:12px;overflow:hidden}
+ #video,#canvas{position:absolute;top:0;left:0;width:640px;height:360px;object-fit:cover}
+ #instr-video{width:640px;height:360px;border-radius:12px;object-fit:cover;margin:0 auto}
+ #ref-img{width:320px;height:180px;margin:1rem auto 0;object-fit:contain;background:#000;border-radius:8px}
+ .btn{padding:.75rem 1.25rem;border:none;border-radius:999px;font-weight:600;cursor:pointer;transition:background-color .2s}
+ .btn-start{background:#22c55e;color:#000}.btn-start:hover{background:#16a34a}
+ .btn-skip{background:#fbbf24;color:#000}.btn-skip:hover{background:#f59e0b}
+ #timer,#score{font-size:1.25rem;margin-top:1rem}
+</style>
 </head>
-<body data-page="training">
+<body>
 <div class="overlay">
-  <!-- 1) Старт -->
-  <div id="controls" class="card active">
-    <button id="start-btn" class="btn btn-start">Начать тренировку</button>
+  <div id="card-start"   class="card active"><button id="btn-start"  class="btn btn-start">Начать тренировку</button></div>
+  <div id="card-instr"   class="card">
+    <h2 id="lbl-instr">Инструктаж</h2><video id="video-instr" controls></video>
+    <button id="btn-skip-instr" class="btn btn-skip">Пропустить</button>
   </div>
-
-  <!-- 2) Инструктаж -->
-  <div id="instr-container" class="card">
-    <h2 id="pose-label">Инструктаж</h2>
-    <video id="instr-video" controls></video>
-    <button id="skip-instr-btn" class="btn btn-skip">Пропустить</button>
+  <div id="card-pose"    class="card">
+    <h2 id="lbl-pose">Позирование</h2>
+    <div class="video-wrapper"><video id="video" autoplay muted playsinline></video><canvas id="canvas"></canvas></div>
+    <img id="ref-img" alt="Эталон">
+    <div id="timer">30</div><div id="score">Точность: —</div>
+    <button id="btn-skip-pose" class="btn btn-skip">Пропустить позу</button>
   </div>
-
-  <!-- 3) Позирование -->
-  <div id="camera-container" class="card">
-    <h2 id="pose-label-2">Позирование</h2>
-    <div class="video-wrapper">
-      <video id="video" autoplay muted playsinline></video>
-      <canvas id="canvas"></canvas>
-    </div>
-    <img id="ref-img" alt="Эталонная поза"/>
-    <div id="timer">30</div>
-    <div id="score">Точность: —</div>
-    <button id="skip-pose-btn" class="btn btn-skip">Пропустить позу</button>
-  </div>
-
-  <!-- 4) Завершение -->
-  <div id="finish-container" class="card">
-    <h2>Тренировка завершена!</h2>
-    <button id="finish-btn" class="btn btn-start">В личный кабинет</button>
-  </div>
+  <div id="card-finish"  class="card"><h2>Тренировка завершена!</h2>
+    <button id="btn-finish" class="btn btn-start">В личный кабинет</button></div>
 </div>
 
+<!-- training.html (только JS изменён, верстка прежняя) -->
 <script>
-(async () => {
-  /* ───── 0. План из URL ───── */
-  const params  = new URLSearchParams(location.search);
-  const poseIds = (params.get('poses') || '').split(',').map(Number).filter(Boolean);
+(async ()=>{
+  const qs   = new URLSearchParams(location.search);
+  const ids  = (qs.get('poses')||'').split(',').map(Number).filter(Boolean);
+  const planId = Number(qs.get('plan')) || null;   // ← НОВАЯ строка
+  const token=localStorage.getItem('token');
+  if(!token) return location.href='login.html';
+  const headers={Authorization:`Bearer ${token}`};
 
-  const token   = localStorage.getItem('token');
-  if (!token) return location.href = 'login.html';
-  const headers = { Authorization: `Bearer ${token}` };
+  const poses=await fetch('/poses/',{headers}).then(r=>r.json());
+  const PLAN=poses.filter(p=>ids.includes(p.id));
+  if(!PLAN.length){alert('План пуст');return;}
 
-  const allPoses = await fetch('/poses/', { headers }).then(r => r.json());
-  const PLAN     = allPoses.filter(p => poseIds.includes(p.id));
+  const $=id=>document.getElementById(id);
+  const video=$('video'),canvas=$('canvas'),ctx=canvas.getContext('2d');
+  const startBtn=$('btn-start'),instrVid=$('video-instr'),skipInstr=$('btn-skip-instr');
+  const poseLabel=$('lbl-pose'),refImg=$('ref-img'),timerEl=$('timer'),scoreEl=$('score');
+  const skipPose=$('btn-skip-pose'),finishBtn=$('btn-finish');
 
-  /* ───── 1. DOM ───── */
-  const $ = id => document.getElementById(id);
-  const video=$('video'), canvas=$('canvas'), ctx=canvas.getContext('2d');
-  const startBtn=$('start-btn'), instrCard=$('instr-container'),
-        instrVideo=$('instr-video'), skipInstr=$('skip-instr-btn'),
-        poseLabel=$('pose-label'), camCard=$('camera-container'),
-        poseLabel2=$('pose-label-2'), refImg=$('ref-img'),
-        timerEl=$('timer'), scoreEl=$('score'), skipPose=$('skip-pose-btn'),
-        finishCard=$('finish-container'), finishBtn=$('finish-btn');
+  const show=id=>['card-start','card-instr','card-pose','card-finish']
+    .forEach(c=>$(c).classList.toggle('active',c===id));
 
-  const sections=['controls','instr-container','camera-container','finish-container'];
-  const showOnly=id=>sections.forEach(x=>$(x).classList.toggle('active',x===id));
+  let idx=0,timerInt,streamInt,ws,startedISO,collected=[],lastScore=0,saved=false;
 
-  /* ───── 2. State ───── */
-  let idx=0, timerInt, streamInt, ws;
-  let lastScore=0, sessionStartedISO, collected=[];
+  function sendPose(key){
+    const m=JSON.stringify({type:'pose',poseName:key});
+    ws.readyState===1?ws.send(m):ws.addEventListener('open',()=>ws.send(m),{once:true});
+  }
 
-  const sendPose = key => {
-    const msg=JSON.stringify({type:'pose',poseName:key});
-    (ws.readyState===WebSocket.OPEN)
-      ? ws.send(msg)
-      : ws.addEventListener('open',()=>ws.send(msg),{once:true});
-  };
+  /* ── старт ── */
+  startBtn.onclick=async()=>{
+    startedISO=new Date().toISOString();
+    try{video.srcObject=await navigator.mediaDevices.getUserMedia({video:true});}
+    catch{return alert('Нет доступа к камере');}
+    video.onloadedmetadata=()=>{canvas.width=video.videoWidth;canvas.height=video.videoHeight;};
 
-  /* ───── 3. Старт ───── */
-  startBtn.onclick = async () => {
-    sessionStartedISO=new Date().toISOString();
-
-    /* камера */
-    try{
-      video.srcObject=await navigator.mediaDevices.getUserMedia({video:true});
-    }catch{ return alert('Нет доступа к камере'); }
-    video.onloadedmetadata=()=>{
-      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-    };
-
-    /* сокет */
     ws=new WebSocket(`ws://${location.hostname}:8000/ws/stream?token=${token}`);
-    ws.onmessage=e=>drawPose(JSON.parse(e.data));
+    ws.onmessage=e=>draw(JSON.parse(e.data));
     ws.onerror=console.error;
 
     nextPose();
   };
 
-  /* ───── 4. Цикл позы ───── */
+  /* ── цикл поз ── */
   function nextPose(){
-    clearInterval(timerInt); clearInterval(streamInt);
-    if(idx>=PLAN.length) return finish();
+    clearInterval(timerInt);clearInterval(streamInt);
+    if(idx>=PLAN.length){finish();return;}
 
-    const p=PLAN[idx], key=p.video_url.split('/').pop().split('.')[0];
-    poseLabel.textContent=p.name; instrVideo.src=p.video_url;
-    showOnly('instr-container'); sendPose(key);
-
-    instrVideo.onended=skipInstr.onclick=startPose;
+    const p=PLAN[idx],key=p.video_url.split('/').pop().split('.')[0];
+    $('lbl-instr').textContent=p.name;
+    instrVid.src=p.video_url;
+    show('card-instr'); sendPose(key);
+    instrVid.onended=skipInstr.onclick=startPose;
   }
 
   function startPose(){
-    instrVideo.pause(); instrVideo.currentTime=0;
-    const p=PLAN[idx], key=p.video_url.split('/').pop().split('.')[0];
+    instrVid.pause();instrVid.currentTime=0;
+    const p=PLAN[idx],key=p.video_url.split('/').pop().split('.')[0];
+    poseLabel.textContent=p.name;refImg.src=`/images/${key}.png`;
+    show('card-pose');
 
-    poseLabel2.textContent=p.name; refImg.src=`images/${key}.png`;
-    showOnly('camera-container');
-
-    let t=p.duration||30; timerEl.textContent=t;
-    timerInt=setInterval(()=>{
-      t--; timerEl.textContent=t;
-      if(t<=0){ recordScore(); idx++; nextPose(); }
-    },1000);
+    let t=p.duration||30;timerEl.textContent=t;
+    timerInt=setInterval(()=>{ if(--t<=0){record();idx++;nextPose();} timerEl.textContent=t; },1000);
 
     streamInt=setInterval(()=>{
       const tmp=document.createElement('canvas');
-      tmp.width=canvas.width; tmp.height=canvas.height;
+      tmp.width=canvas.width;tmp.height=canvas.height;
       tmp.getContext('2d').drawImage(video,0,0);
       tmp.toBlob(b=>{
         const fr=new FileReader();
@@ -160,66 +116,58 @@
     },150);
   }
 
-  skipPose.onclick=()=>{ recordScore(); idx++; nextPose(); };
+  skipPose.onclick=()=>{record();idx++;nextPose();};
 
-  /* ───── 5. Отрисовка + метрика ───── */
-  function drawPose(msg){
-    if(msg.error) return;
-    if(msg.score!==undefined){
-      lastScore=msg.score;
-      scoreEl.textContent=`Точность: ${msg.score}%`;
-    }
-    if(!msg.landmarks||!msg.connections) return;
+  /* ── обработка кадров ── */
+  function draw(m){
+    if(m.score!==undefined){lastScore=m.score;scoreEl.textContent=`Точность: ${m.score}%`;}
+    if(!(m.landmarks&&m.connections)) return;
 
-    const bad=new Set(msg.bad_points||[]);
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    msg.connections.forEach(([i,j])=>{
-      const lm=msg.landmarks;
-      if(!lm[i]||!lm[j]||lm[i].visibility<0.5||lm[j].visibility<0.5) return;
-      ctx.beginPath();
-      ctx.moveTo(lm[i].x*canvas.width,lm[i].y*canvas.height);
+    const bad=new Set(m.bad_points||[]);
+    m.connections.forEach(([i,j])=>{
+      const lm=m.landmarks;if(!lm[i]||!lm[j]||lm[i].visibility<0.5||lm[j].visibility<0.5)return;
+      ctx.beginPath();ctx.moveTo(lm[i].x*canvas.width,lm[i].y*canvas.height);
       ctx.lineTo(lm[j].x*canvas.width,lm[j].y*canvas.height);
-      ctx.strokeStyle=bad.has(i)||bad.has(j)?'red':'lime';
-      ctx.lineWidth=2; ctx.stroke();
+      ctx.strokeStyle=bad.has(i)||bad.has(j)?'red':'lime';ctx.lineWidth=2;ctx.stroke();
     });
   }
-
-  const recordScore=()=>{           // фиксируем результат позы
-    if(idx>=PLAN.length) return;
-    collected.push({pose_id:PLAN[idx].id,score:lastScore});
-    lastScore=0;
+  const record = () => {
+    if (idx >= PLAN.length) return;               // guard
+    collected.push({ pose_id: PLAN[idx].id, score: lastScore });
   };
 
-  /* ───── 6. Финиш ───── */
-  async function finish(){
-    clearInterval(timerInt); clearInterval(streamInt);
-    if(ws?.readyState===WebSocket.OPEN) ws.close();
-    await saveSession();
-    showOnly('finish-container');
-  }
-  finishBtn.onclick=()=>location.href='dashboard.html';
-
-  /* ───── 7. POST /sessions/ ───── */
+  /* ── сохранение сессии ── */
   async function saveSession(){
-    if(!collected.length) return;
-    const totalSeconds=Math.floor((Date.now()-Date.parse(sessionStartedISO))/1000);
-
-    const payload={
-      total_time: totalSeconds,
-      pose_scores: collected        // <-- имя поля, которое ждёт бэкенд
-      // workout_id: можно добавить, если передаёте ?planId=...
-    };
-
-    try{
-      const r=await fetch('/sessions/',{
-        method:'POST',
-        headers:{...headers,'Content-Type':'application/json'},
-        body:JSON.stringify(payload)
-      });
-      if(!r.ok) console.error('Save session error',await r.text());
-    }catch(e){ console.error(e); }
+    if(saved || !collected.length) return;
+  saved = true;
+  const body = {
+    workout_id: planId, 
+    total_time : Math.floor((Date.now()-Date.parse(startedISO))/1000),
+    scores: collected
+  };
+  const resp = await fetch('/sessions/',{
+    method : 'POST',
+    headers: {...headers,'Content-Type':'application/json'},
+    body   : JSON.stringify(body)
+  });
+  console.log('[saveSession]', body, resp.status);
   }
+
+  /* ── завершение ── */
+  async function finish(){
+    clearInterval(timerInt);clearInterval(streamInt);
+    try{ws?.readyState===1&&ws.close();}catch{}
+    await saveSession(); show('card-finish');
+  }
+
+  finishBtn.onclick=async()=>{
+  await saveSession();
+  location.href='dashboard.html';
+};
+  window.addEventListener('beforeunload',saveSession);
 })();
 </script>
+
 </body>
 </html>
