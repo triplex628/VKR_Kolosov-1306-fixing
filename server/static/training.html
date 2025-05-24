@@ -19,13 +19,31 @@
  .btn-start{background:#22c55e;color:#000}.btn-start:hover{background:#16a34a}
  .btn-skip{background:#fbbf24;color:#000}.btn-skip:hover{background:#f59e0b}
  #timer,#score{font-size:1.25rem;margin-top:1rem}
+
+ .video-16x9 {
+  position: relative;
+  width: 100%;
+  max-width: 800px;      /* не шире карточки */
+  aspect-ratio: 16 / 9;  /* сохраняем пропорции */
+  margin: 0 auto;
+}
+.video-16x9 > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;     /* обрежет лишнее, но не «раздует» */
+  border-radius: 12px;
+}
 </style>
 </head>
 <body>
 <div class="overlay">
   <div id="card-start"   class="card active"><button id="btn-start"  class="btn btn-start">Начать тренировку</button></div>
   <div id="card-instr"   class="card">
-    <h2 id="lbl-instr">Инструктаж</h2><video id="video-instr" controls></video>
+    <h2 id="lbl-instr">Инструктаж</h2><div class="video-16x9">
+  <video id="video-instr" controls></video>
+</div>
     <button id="btn-skip-instr" class="btn btn-skip">Пропустить</button>
   </div>
   <div id="card-pose"    class="card">
