@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Вход</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body data-page="login">
+  <div class="card">
+    <!-- переключатель языка -->
+    <div class="lang-switch">
+      <button id="btn-ru" class="active">RU</button>
+      <button id="btn-en">EN</button>
+    </div>
+
+    <!-- заголовок -->
+    <h1 id="page-title">Вход</h1>
+
+    <!-- форма -->
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username" id="lbl-username">Имя пользователя</label>
+        <input type="text" id="username" name="username" required />
+      </div>
+      <div class="form-group">
+        <label for="password" id="lbl-password">Пароль</label>
+        <input type="password" id="password" name="password" required minlength="6" />
+      </div>
+      <button type="submit" id="submit-btn" class="btn">Войти</button>
+    </form>
+
+    <!-- ссылка на регистрацию -->
+    <div class="link-row">
+      <span id="link-text">Нет аккаунта? </span>
+      <a id="link-url" href="register.html">Регистрация</a>
+    </div>
+  </div>
+
+  <script src="scripts/api.js"></script>
+<script src="scripts/login.js"></script>    
+<script src="scripts/main.js"></script>     
+
+</body>
+</html>

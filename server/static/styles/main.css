@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+  --clr-primary:   #5c4dff;
+  --clr-secondary: #ff6a3d;
+  --clr-bg-dark:   rgba(0, 0, 0, 0.75);
+  --clr-white:     #ffffff;
+  --radius:        12px;
+  --transition:    0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+html, body {
+  /* 1) Полоса прокрутки не должна резать фон */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Фон пусть висит на html (или на body, но не на узковатом flex-контейнере) */
+html {
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)),
+    url('../images/fitness-bg.jpg') center/cover no-repeat;
+}
+
+/* А центровку карточки делаем через тело, но уже с шириной 100% */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.card {
+  background: var(--clr-bg-dark);
+  border-radius: var(--radius);
+  padding: 2.5rem;
+  max-width: 380px;
+  width: 100%;
+  color: var(--clr-white);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform var(--transition);
+}
+.card:hover {
+  transform: translateY(-4px);
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.lang-switch {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.lang-switch button {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-weight: 500;
+  transition: color var(--transition);
+}
+.lang-switch button.active,
+.lang-switch button:hover {
+  color: var(--clr-white);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.85);
+}
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: box-shadow var(--transition);
+}
+.form-group input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(92,77,255,0.4);
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1.25rem;
+  background: var(--clr-primary);
+  color: var(--clr-white);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+.btn:hover {
+  background: var(--clr-secondary);
+  transform: translateY(-2px);
+}
+
+.link-row {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.85);
+}
+.link-row a {
+  color: var(--clr-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.link-row a:hover {
+  color: var(--clr-secondary);
+}

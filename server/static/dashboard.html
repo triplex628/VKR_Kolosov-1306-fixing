@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Личный кабинет</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body data-page="dashboard"
+      class="min-h-screen bg-cover bg-center text-white flex flex-col"
+      style="background-image: url('images/dashboard-bg.jpg')"
+>
+<!-- ──────────────────────── ШАПКА ──────────────────────────── -->
+<header class="flex justify-between items-center p-6 bg-black/50 backdrop-blur-md">
+  <div class="flex items-center space-x-4">
+    <svg class="w-10 h-10 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z"/>
+      <path d="M4 20c0-4 4-7 8-7s8 3 8 7v1H4v-1z"/>
+    </svg>
+    <span class="text-2xl font-semibold">
+      Привет, <span id="user-name">…</span>!
+    </span>
+  </div>
+  <div class="space-x-4">
+    <button id="btn-settings"
+            class="px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors">
+      Настройки
+    </button>
+    <button id="btn-logout"
+            class="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 transition-colors">
+      Выйти
+    </button>
+  </div>
+</header>
+
+<!-- ──────────────────────── КОНТЕНТ ─────────────────────────── -->
+<main class="flex-1 overflow-y-auto p-6 space-y-12">
+
+  <!-- ░░░░░░░░░░░░  Создание / редактирование плана  ░░░░░░░░░░░░ -->
+  <section class="bg-black/40 backdrop-blur-md rounded-2xl p-6">
+    <h2 class="text-xl font-bold mb-4">План тренировок</h2>
+    <form id="custom-workout-form" class="space-y-4">
+      <input type="hidden" id="edit-id"/>
+      <div class="flex items-center space-x-2 mb-2">
+        <input id="plan-name" type="text" placeholder="Название плана"
+               class="flex-1 px-3 py-2 rounded-lg bg-gray-800 focus:outline-none"/>
+        <button id="save-btn" type="submit"
+                class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition-colors">
+          Сохранить план
+        </button>
+      </div>
+      <div id="poses-list" class="grid grid-cols-2 gap-4 text-gray-200"></div>
+    </form>
+  </section>
+
+  <!-- ░░░░░░░░░░░░  Мои планы тренировок  ░░░░░░░░░░░░ -->
+  <section class="bg-black/40 backdrop-blur-md rounded-2xl p-6">
+    <h2 class="text-xl font-bold mb-4">Мои планы тренировок</h2>
+    <ul id="plan-list" class="space-y-4 text-gray-200"></ul>
+  </section>
+
+  <!-- ░░░░░░░░░░░░  Последние тренировки  ░░░░░░░░░░░░ -->
+  <section class="bg-black/40 backdrop-blur-md rounded-2xl p-6">
+    <h2 class="text-xl font-bold mb-4">Мои последние тренировки</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left table-fixed text-gray-200">
+        <thead>
+          <tr class="border-b border-white/20">
+            <th class="px-4 py-2">Дата</th>
+            <th class="px-4 py-2">План</th>
+            <th class="px-4 py-2">Всего, сек</th>
+            <th class="px-4 py-2">Средний балл</th>
+            <th class="px-4 py-2">Детали (позы: балл)</th>
+          </tr>
+        </thead>
+        <tbody id="recent-list"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ──────────────────────── СКРИПТ ──────────────────────────── -->
+<script>
+// «корневой» URL — тот же origin, где открыт фронт
+const API   = location.origin.replace(/\/$/, '');
+const token = localStorage.getItem('token');
+if (!token) location.href = 'login.html';
+
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${token}`,
+};
+
+// ──────────── 1. Шапка / профиль ────────────
+(async () => {
+  try {
+    const me   = await fetch(API + '/users/me', { headers }).then(r => r.json());
+    const name = me.display_name || me.email.split('@')[0];
+    localStorage.setItem('username', name);
+    document.getElementById('user-name').textContent = name;
+  } catch {
+    document.getElementById('user-name').textContent =
+      localStorage.getItem('username') || 'Гость';
+  }
+})();
+document.getElementById('btn-settings').onclick = () => location.href = 'settings.html';
+document.getElementById('btn-logout').onclick   = () => {
+  localStorage.clear();
+  location.href = 'login.html';
+};
+
+// ──────────── 2. Кэши-словарики ────────────
+const posesMap  = Object.create(null); // pose_id → name
+const plansMap  = Object.create(null); // plan_id → name
+const plansData = Object.create(null); // plan_id → полный объект
+
+// ──────────── 3. Загрузка поз ────────────
+async function loadPoses() {
+  const poses = await fetch(API + '/poses/', { headers }).then(r => r.json());
+  document.getElementById('poses-list').innerHTML = poses.map(p => {
+    posesMap[p.id] = p.name;
+    return `<label class="flex items-center space-x-2">
+              <input type="checkbox" name="pose" value="${p.id}"
+                     class="w-4 h-4 accent-blue-400"/>
+              <span>${p.name}</span>
+            </label>`;
+  }).join('');
+}
+
+// ──────────── 4. CRUD планов ────────────
+document.getElementById('custom-workout-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const editId   = document.getElementById('edit-id').value;
+  const name     = document.getElementById('plan-name').value.trim();
+  const selected = Array.from(document.querySelectorAll('input[name="pose"]:checked'))
+                        .map(cb => +cb.value);
+
+  if (!name)     return alert('Введите название плана');
+  if (!selected.length) return alert('Выберите хотя бы одну позу');
+
+  const payload = {
+    name,
+    pose_data: selected.map(id => ({ pose_id: id, duration: 30 })),
+  };
+  const url    = editId ? `${API}/workouts/${editId}` : `${API}/workouts/`;
+  const method = editId ? 'PUT' : 'POST';
+
+  const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+  if (!res.ok) {
+    alert('Ошибка при сохранении');
+    console.error(await res.text());
+    return;
+  }
+
+  // сброс формы
+  e.target.reset();
+  document.getElementById('edit-id').value = '';
+  document.getElementById('save-btn').textContent = 'Сохранить план';
+
+  await loadPlans();
+  await loadSessions();
+});
+
+// ──────────── 5. Отрисовка планов ────────────
+async function loadPlans() {
+  const plans = await fetch(API + '/workouts/', { headers }).then(r => r.json());
+
+  document.getElementById('plan-list').innerHTML = plans.map(plan => {
+    plansMap[plan.id]  = plan.name;
+    plansData[plan.id] = plan;
+
+    const items = plan.pose_data.map(item =>
+      `<li>${posesMap[item.pose_id] || ('№' + item.pose_id)}, ${item.duration} сек</li>`
+    ).join('');
+
+    const qs = plan.pose_data.map(x => x.pose_id).join(',');
+    return `
+      <li class="border border-white/20 rounded-lg p-4">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold">${plan.name}</span>
+          <div class="space-x-2">
+            <button data-id="${plan.id}" class="btn-toggle px-3 py-1 bg-gray-700 rounded-lg text-sm">Позы</button>
+            <button data-poses="${qs}" class="btn-start px-3 py-1 bg-blue-500 rounded-lg text-sm">Начать</button>
+            <button data-id="${plan.id}" class="btn-edit px-3 py-1 bg-yellow-400 rounded-lg text-sm">Изменить</button>
+            <button data-id="${plan.id}" class="btn-delete px-3 py-1 bg-red-500 rounded-lg text-sm">Удалить</button>
+          </div>
+        </div>
+        <ul class="mt-2 ml-4 hidden text-gray-300">${items}</ul>
+      </li>`;
+  }).join('');
+
+  // ── handlers
+  document.querySelectorAll('.btn-toggle').forEach(btn =>
+    btn.onclick = () => btn.closest('li').querySelector('ul').classList.toggle('hidden')
+  );
+
+  document.querySelectorAll('.btn-start').forEach(btn =>
+    btn.onclick = () =>
+      location.href = `training.html?poses=${btn.getAttribute('data-poses')}`
+  );
+
+  document.querySelectorAll('.btn-edit').forEach(btn =>
+    btn.onclick = () => {
+      const p = plansData[btn.dataset.id];
+      document.getElementById('edit-id').value   = p.id;
+      document.getElementById('plan-name').value = p.name;
+      document.getElementById('save-btn').textContent = 'Сохранить изменения';
+      document.querySelectorAll('input[name="pose"]').forEach(cb =>
+        cb.checked = p.pose_data.some(x => x.pose_id == cb.value)
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  );
+
+  document.querySelectorAll('.btn-delete').forEach(btn =>
+    btn.onclick = async () => {
+      if (!confirm('Удалить план?')) return;
+      await fetch(`${API}/workouts/${btn.dataset.id}`, { method: 'DELETE', headers });
+      await loadPlans();
+      await loadSessions();
+    }
+  );
+}
+
+// ──────────── 6. История сессий ────────────
+async function loadSessions() {
+  const sessions = await fetch(API + '/sessions/', { headers }).then(r => r.json());
+  // сортируем, чтобы последние были сверху
+  sessions.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+
+  document.getElementById('recent-list').innerHTML = sessions.map(s => {
+    // fallback — если бек не посчитал средний балл
+    const computedAvg = s.scores && s.scores.length
+      ? s.scores.reduce((sum, x) => sum + x.score, 0) / s.scores.length
+      : 0;
+
+    const avg = (s.avg_score ?? computedAvg).toFixed(1);
+
+    const details = (s.scores || []).map(x =>
+      `${posesMap[x.pose_id] || ('№' + x.pose_id)}: ${(+x.score).toFixed(1)}`
+    ).join(', ');
+
+    const planName = s.workout_id
+      ? (plansMap[s.workout_id] || '—')
+      : (s.workout_name || '—');
+
+    return `
+      <tr class="border-b border-white/20">
+        <td class="px-4 py-2">${new Date(s.started_at).toLocaleString()}</td>
+        <td class="px-4 py-2">${planName}</td>
+        <td class="px-4 py-2">${s.total_time}</td>
+        <td class="px-4 py-2">${avg}</td>
+        <td class="px-4 py-2">${details}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ──────────── 7. Инициализация последовательная ────────────
+(async () => {
+  await loadPoses();
+  await loadPlans();
+  await loadSessions();
+})();
+</script>
+</body>
+</html>

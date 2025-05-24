@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Настройки</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-cover bg-center text-white flex flex-col"
+      style="background-image:url('images/settings-bg.jpg')">
+
+  <!-- Header -->
+  <header class="flex justify-between items-center p-6 bg-black/50 backdrop-blur-md">
+    <h1 class="text-2xl font-semibold">Настройки</h1>
+    <button onclick="history.back()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+      Назад
+    </button>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 overflow-y-auto p-6 space-y-8">
+    <section class="bg-black/40 backdrop-blur-md rounded-2xl p-6 space-y-4">
+      <h2 class="text-xl font-bold">Профиль</h2>
+      <form id="settings-form" class="space-y-4">
+        <div>
+          <label class="block text-gray-300 mb-1">Имя пользователя</label>
+          <input type="text" id="display_name"
+                 class="w-full px-4 py-2 rounded-lg bg-white/20 text-white focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-gray-300 mb-1">Email</label>
+          <input type="email" id="email" disabled
+                 class="w-full px-4 py-2 rounded-lg bg-white/20 text-gray-400 cursor-not-allowed"/>
+        </div>
+        <button type="submit"
+                class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-semibold">
+          Сохранить
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+  (async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Сессия истекла, войдите снова');
+      return location.href = 'login.html';
+    }
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+
+    // Загрузить текущие данные
+    try {
+      const resp = await fetch('/users/me', { headers });
+      if (!resp.ok) throw '';
+      const user = await resp.json();
+      document.getElementById('display_name').value = user.display_name;
+      document.getElementById('email').value        = user.email;
+    } catch {
+      alert('Не удалось загрузить профиль');
+    }
+
+    // Сохранить изменения
+    document.getElementById('settings-form').onsubmit = async e => {
+      e.preventDefault();
+      const name = document.getElementById('display_name').value.trim();
+      if (!name) {
+        return alert('Имя не может быть пустым');
+      }
+      try {
+        const res = await fetch('/users/me', {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ display_name: name })
+        });
+        if (!res.ok) throw '';
+        const updated = await res.json();
+        localStorage.setItem('username', updated.display_name);
+        alert('Профиль успешно обновлён');
+      } catch {
+        alert('Ошибка при сохранении');
+      }
+    };
+  })();
+  </script>
+</body>
+</html>

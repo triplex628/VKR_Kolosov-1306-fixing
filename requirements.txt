@@ -1,0 +1,19 @@
+opencv-python-headless
+mediapipe
+torch      # если планируете YOLOv7
+# yolov7-pose
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+aiosqlite
+python-jose[cryptography]
+passlib[bcrypt]
+crud
+python-multipart
+numpy
+psycopg2
+alembic>=1.7.7
+email-validator
+passlib
+requests
